@@ -1,104 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Birthday</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        h1 {
-            color: white;
-            font-size: 3em;
-            font-family: Arial, sans-serif;
-            position: absolute;
-            text-align: center;
-            animation: glow 1.5s infinite alternate;
-        }
-        @keyframes glow {
-            0% { text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff; }
-            100% { text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff0000; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عيد ميلاد سعيد!</title>
+  <style>
+    /* تنسيق الخلفية */
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle, #000 0%, #333 100%);
+      font-family: 'Arial', sans-serif;
+    }
+    /* تنسيق الرسالة */
+    .message {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #fff;
+      z-index: 2;
+      animation: glow 2s infinite alternate;
+    }
+    .message h1 {
+      font-size: 4em;
+      margin: 0;
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff0080, 0 0 30px #ff0080, 0 0 40px #ff0080;
+    }
+    .message p {
+      font-size: 1.5em;
+      margin-top: 0.5em;
+    }
+    @keyframes glow {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
+    }
+    /* تنسيق عنصر الـCanvas */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+  </style>
 </head>
 <body>
-    <h1>🎉 HAPPY BIRTHDAY! 🎂</h1>
-    <canvas id="fireworks"></canvas>
-    <script>
-        const canvas = document.getElementById("fireworks");
-        const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        class Firework {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.particles = [];
-                for (let i = 0; i < 50; i++) {
-                    this.particles.push({
-                        x: x,
-                        y: y,
-                        speed: Math.random() * 5 + 2,
-                        angle: Math.random() * Math.PI * 2,
-                        alpha: 1
-                    });
-                }
+  <!-- رسالة عيد الميلاد -->
+  <div class="message">
+    <h1>عيد ميلاد سعيد!</h1>
+    <p>كل عام وأنت بخير</p>
+  </div>
+
+  <!-- عنصر الرسم للألعاب النارية -->
+  <canvas id="fireworksCanvas"></canvas>
+
+  <script>
+    // إعداد الـCanvas
+    const canvas = document.getElementById('fireworksCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener('resize', () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
+
+    // تعريف فئة الجسيمات (Particles)
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = Math.random() * 3 + 1;
+        this.speed = Math.random() * 5 + 2;
+        this.angle = Math.random() * Math.PI * 2;
+        this.friction = 0.95;
+        this.gravity = 0.7;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.015 + 0.005;
+      }
+      update() {
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= this.decay;
+      }
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // تعريف فئة الألعاب النارية (Firework)
+    class Firework {
+      constructor() {
+        this.x = Math.random() * cw;
+        this.y = ch;
+        this.targetY = Math.random() * ch / 2;
+        this.speed = Math.random() * 3 + 4;
+        this.exploded = false;
+        this.particles = [];
+        this.color = `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)`;
+      }
+      update() {
+        if (!this.exploded) {
+          // تحريك الألعاب النارية للأعلى حتى الوصول للهدف
+          this.y -= this.speed;
+          if (this.y <= this.targetY) {
+            this.explode();
+          }
+          // رسم نقطة صغيرة تمثل الألعاب النارية قبل الانفجار
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        } else {
+          // تحديث ورسم كل جسيم بعد الانفجار
+          for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.update();
+            p.draw();
+            if (p.alpha <= 0) {
+              this.particles.splice(i, 1);
             }
-            draw() {
-                this.particles.forEach(p => {
-                    ctx.beginPath();
-                    ctx.fillStyle = this.color;
-                    ctx.globalAlpha = p.alpha;
-                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-            update() {
-                this.particles.forEach(p => {
-                    p.x += Math.cos(p.angle) * p.speed;
-                    p.y += Math.sin(p.angle) * p.speed;
-                    p.alpha -= 0.02;
-                });
-                this.particles = this.particles.filter(p => p.alpha > 0);
-            }
+          }
         }
-        
-        let fireworks = [];
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            fireworks.forEach((fw, index) => {
-                fw.draw();
-                fw.update();
-                if (fw.particles.length === 0) fireworks.splice(index, 1);
-            });
-            requestAnimationFrame(animate);
+      }
+      explode() {
+        this.exploded = true;
+        const particleCount = 30 + Math.floor(Math.random() * 20);
+        for (let i = 0; i < particleCount; i++) {
+          this.particles.push(new Particle(this.x, this.y, this.color));
         }
-        
-        function launchFirework() {
-            fireworks.push(new Firework(
-                Math.random() * canvas.width,
-                Math.random() * canvas.height / 2,
-                `hsl(${Math.random() * 360}, 100%, 60%)`
-            ));
+      }
+    }
+
+    let fireworks = [];
+    // دالة الرسوم المتحركة الرئيسية
+    function animate() {
+      requestAnimationFrame(animate);
+      // خلفية شفافة لإحداث أثر التلاشي
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+      ctx.fillRect(0, 0, cw, ch);
+
+      // إطلاق ألعاب نارية جديدة بشكل عشوائي
+      if (Math.random() < 0.05) {
+        fireworks.push(new Firework());
+      }
+
+      // تحديث ورسم كل الألعاب النارية
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        let fw = fireworks[i];
+        fw.update();
+        if (fw.exploded && fw.particles.length === 0) {
+          fireworks.splice(i, 1);
         }
-        
-        setInterval(launchFirework, 500);
-        animate();
-    </script>
+      }
+    }
+
+    animate();
+
+    // إضافة حدث النقر لإطلاق الألعاب النارية في موقع النقر (اختياري)
+    window.addEventListener('click', (e) => {
+      const fw = new Firework();
+      fw.x = e.clientX;
+      fw.y = ch;
+      fw.targetY = e.clientY;
+      fireworks.push(fw);
+    });
+  </script>
 </body>
 </html>
+
 
