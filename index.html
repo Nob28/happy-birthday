@@ -1,291 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Happy Birthday!</title>
   <style>
-    /* إعداد الصفحة العام */
+    /* Background styling */
     body {
       margin: 0;
-      padding: 0;
-      background: radial-gradient(circle, #000, #333);
       overflow: hidden;
-      font-family: Arial, sans-serif;
-      position: relative;
+      background: radial-gradient(circle, #000 0%, #333 100%);
+      font-family: 'Arial', sans-serif;
     }
-    /* حاوية النص المتحرك */
-    .flying-text {
+    /* Message styling */
+    .message {
       position: absolute;
       top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
+      text-align: center;
       color: #fff;
+      z-index: 2;
+      animation: glow 2s infinite alternate;
+    }
+    .message h1 {
       font-size: 4em;
-      letter-spacing: 0.1em;
-      z-index: 3;
-      white-space: nowrap;
+      margin: 0;
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff0080, 0 0 30px #ff0080, 0 0 40px #ff0080;
     }
-    /* تقسيم النص إلى حروف فردية مع تأثير الحركة */
-    .letter {
-      display: inline-block;
-      animation: letterBurst 6s infinite;
+    .message p {
+      font-size: 1.5em;
+      margin-top: 0.5em;
     }
-    /* تأثير الحرف: يبدأ الحرف من حالة غير مرئية (كأنه انفجر) ثم ينتفخ ويطير ثم يعود للحالة الأصلية */
-    @keyframes letterBurst {
-      0% {
-        transform: scale(0);
-        opacity: 0;
-      }
-      10% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-      25% {
-        transform: scale(1.5) translateY(-20px);
-        opacity: 1;
-      }
-      50% {
-        transform: scale(1.5) translate(30px, -40px) rotate(15deg);
-        opacity: 0.8;
-      }
-      70% {
-        transform: scale(2) translate(50px, -70px) rotate(30deg);
-        opacity: 0.3;
-      }
-      90% {
-        transform: scale(0.2) translate(80px, -100px) rotate(90deg);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1) translate(0, 0) rotate(0deg);
-        opacity: 1;
-      }
+    @keyframes glow {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
     }
-    /* إعداد عناصر الـCanvas */
+    /* Canvas styling */
     canvas {
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 1;
     }
-    #confettiCanvas { z-index: 1; }
-    #fireworksCanvas { z-index: 2; }
   </style>
 </head>
 <body>
-  <!-- النص المتحرك -->
-  <div class="flying-text">HAPPY BIRTHDAY!</div>
-  
-  <!-- عناصر Canvas للتأثيرات -->
-  <canvas id="confettiCanvas"></canvas>
+  <!-- Birthday message -->
+  <div class="message">
+    <h1>Happy Birthday!</h1>
+    <p>Wishing you all the best!</p>
+  </div>
+
+  <!-- Fireworks canvas -->
   <canvas id="fireworksCanvas"></canvas>
-  
+
   <script>
-    /* تقسيم النص إلى حروف فردية مع تأخير عشوائي لكل حرف */
-    document.addEventListener("DOMContentLoaded", function(){
-      const textElement = document.querySelector('.flying-text');
-      const text = textElement.textContent;
-      textElement.innerHTML = "";
-      for (let char of text) {
-        const span = document.createElement('span');
-        span.textContent = char;
-        span.className = "letter";
-        // تأخير عشوائي بين 0 و2 ثانية لكل حرف
-        span.style.animationDelay = (Math.random() * 2) + "s";
-        textElement.appendChild(span);
-      }
-    });
-    
-    /* ---------------------- */
-    /* تأثير القصاصات (Confetti) */
-    /* ---------------------- */
-    (function(){
-      const canvas = document.getElementById('confettiCanvas');
-      const ctx = canvas.getContext('2d');
-      let cw = window.innerWidth, ch = window.innerHeight;
+    // Setup canvas
+    const canvas = document.getElementById('fireworksCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener('resize', () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
       canvas.width = cw;
       canvas.height = ch;
-      
-      window.addEventListener('resize', () => {
-        cw = window.innerWidth;
-        ch = window.innerHeight;
-        canvas.width = cw;
-        canvas.height = ch;
-      });
-      
-      const confettiCount = 250;
-      let confettis = [];
-      const colors = [
-        '#f94144','#f3722c','#f8961e','#f9844a','#f9c74f',
-        '#90be6d','#43aa8b','#4d908e','#577590','#277da1'
-      ];
-      
-      function createConfetti() {
-        return {
-          x: Math.random() * cw,
-          y: Math.random() * ch - ch,
-          r: Math.floor(Math.random() * 6) + 2,
-          d: (Math.random() * confettiCount) + 10,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          tilt: Math.random() * 10 - 10,
-          tiltAngleIncremental: (Math.random() * 0.07) + 0.05,
-          tiltAngle: 0
-        };
+    });
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = Math.random() * 3 + 1;
+        this.speed = Math.random() * 5 + 2;
+        this.angle = Math.random() * Math.PI * 2;
+        this.friction = 0.95;
+        this.gravity = 0.7;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.015 + 0.005;
       }
-      
-      function initConfetti() {
-        confettis = [];
-        for (let i = 0; i < confettiCount; i++){
-          confettis.push(createConfetti());
-        }
+      update() {
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= this.decay;
       }
-      
-      function drawConfetti(piece) {
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
         ctx.beginPath();
-        ctx.lineWidth = piece.r;
-        ctx.strokeStyle = piece.color;
-        ctx.moveTo(piece.x + piece.tilt + (piece.r / 2), piece.y);
-        ctx.lineTo(piece.x + piece.tilt, piece.y + piece.tilt + piece.r);
-        ctx.stroke();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
       }
-      
-      function updateConfetti() {
-        ctx.clearRect(0, 0, cw, ch);
-        for (let i = 0; i < confettiCount; i++){
-          let piece = confettis[i];
-          piece.tiltAngle += piece.tiltAngleIncremental;
-          piece.y += (Math.cos(piece.d) + 3 + piece.r / 2) / 2;
-          piece.x += Math.sin(piece.d);
-          piece.tilt = Math.sin(piece.tiltAngle - i/3) * 15;
-          if(piece.y > ch) {
-            confettis[i] = createConfetti();
-            confettis[i].x = Math.random() * cw;
-            confettis[i].y = -10;
+    }
+
+    // Firework class
+    class Firework {
+      constructor() {
+        this.x = Math.random() * cw;
+        this.y = ch;
+        this.targetY = Math.random() * ch / 2;
+        this.speed = Math.random() * 3 + 4;
+        this.exploded = false;
+        this.particles = [];
+        this.color = `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)`;
+      }
+      update() {
+        if (!this.exploded) {
+          this.y -= this.speed;
+          if (this.y <= this.targetY) {
+            this.explode();
           }
-          drawConfetti(piece);
-        }
-        requestAnimationFrame(updateConfetti);
-      }
-      
-      initConfetti();
-      updateConfetti();
-    })();
-    
-    /* ---------------------- */
-    /* تأثير الألعاب النارية (Fireworks) */
-    /* ---------------------- */
-    (function(){
-      const canvas = document.getElementById('fireworksCanvas');
-      const ctx = canvas.getContext('2d');
-      let fwW = window.innerWidth, fwH = window.innerHeight;
-      canvas.width = fwW;
-      canvas.height = fwH;
-      
-      window.addEventListener('resize', () => {
-        fwW = window.innerWidth;
-        fwH = window.innerHeight;
-        canvas.width = fwW;
-        canvas.height = fwH;
-      });
-      
-      class Particle {
-        constructor(x, y, color) {
-          this.x = x;
-          this.y = y;
-          this.color = color;
-          this.radius = Math.random() * 3 + 1;
-          this.speed = Math.random() * 5 + 2;
-          this.angle = Math.random() * Math.PI * 2;
-          this.friction = 0.95;
-          this.gravity = 0.7;
-          this.alpha = 1;
-          this.decay = Math.random() * 0.015 + 0.005;
-        }
-        update() {
-          this.speed *= this.friction;
-          this.x += Math.cos(this.angle) * this.speed;
-          this.y += Math.sin(this.angle) * this.speed + this.gravity;
-          this.alpha -= this.decay;
-        }
-        draw() {
-          ctx.save();
-          ctx.globalAlpha = this.alpha;
           ctx.beginPath();
-          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
           ctx.fillStyle = this.color;
           ctx.fill();
-          ctx.restore();
-        }
-      }
-      
-      class Firework {
-        constructor(x, y) {
-          this.x = x || Math.random() * fwW;
-          this.y = fwH;
-          this.targetY = y || Math.random() * fwH / 2;
-          this.speed = Math.random() * 3 + 4;
-          this.exploded = false;
-          this.particles = [];
-          this.color = `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)`;
-        }
-        update() {
-          if (!this.exploded) {
-            this.y -= this.speed;
-            if (this.y <= this.targetY) {
-              this.explode();
-            }
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-          } else {
-            for (let i = this.particles.length - 1; i >= 0; i--) {
-              let p = this.particles[i];
-              p.update();
-              p.draw();
-              if (p.alpha <= 0) {
-                this.particles.splice(i, 1);
-              }
+        } else {
+          for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.update();
+            p.draw();
+            if (p.alpha <= 0) {
+              this.particles.splice(i, 1);
             }
           }
         }
-        explode() {
-          this.exploded = true;
-          const count = 30 + Math.floor(Math.random() * 20);
-          for (let i = 0; i < count; i++){
-            this.particles.push(new Particle(this.x, this.y, this.color));
-          }
+      }
+      explode() {
+        this.exploded = true;
+        const particleCount = 30 + Math.floor(Math.random() * 20);
+        for (let i = 0; i < particleCount; i++) {
+          this.particles.push(new Particle(this.x, this.y, this.color));
         }
       }
-      
-      let fireworks = [];
-      
-      function animateFireworks(){
-        requestAnimationFrame(animateFireworks);
-        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-        ctx.fillRect(0, 0, fwW, fwH);
-        if (Math.random() < 0.05) {
-          fireworks.push(new Firework());
-        }
-        for (let i = fireworks.length - 1; i >= 0; i--){
-          let fw = fireworks[i];
-          fw.update();
-          if (fw.exploded && fw.particles.length === 0) {
-            fireworks.splice(i, 1);
-          }
+    }
+
+    let fireworks = [];
+    // Main animation function
+    function animate() {
+      requestAnimationFrame(animate);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+      ctx.fillRect(0, 0, cw, ch);
+
+      if (Math.random() < 0.05) {
+        fireworks.push(new Firework());
+      }
+
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        let fw = fireworks[i];
+        fw.update();
+        if (fw.exploded && fw.particles.length === 0) {
+          fireworks.splice(i, 1);
         }
       }
-      
-      animateFireworks();
-      
-      // إطلاق ألعاب نارية عند النقر على الشاشة
-      window.addEventListener('click', (e) => {
-        const fw = new Firework(e.clientX, e.clientY);
-        fireworks.push(fw);
-      });
-    })();
+    }
+
+    animate();
+
+    // Click event to trigger fireworks at click position
+    window.addEventListener('click', (e) => {
+      const fw = new Firework();
+      fw.x = e.clientX;
+      fw.y = ch;
+      fw.targetY = e.clientY;
+      fireworks.push(fw);
+    });
   </script>
 </body>
 </html>
-
 
