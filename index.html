@@ -1,20 +1,18 @@
-
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <title>Happy Birthday</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عيد ميلاد سعيد!</title>
   <style>
-    /* تنسيق خلفية الصفحة */
+    /* تنسيق الخلفية */
     body {
       margin: 0;
-      padding: 0;
-      background: #000; /* خلفية سوداء */
-      overflow: hidden; /* إخفاء الشريط عند تحريك القصاصات */
-      font-family: sans-serif;
+      overflow: hidden;
+      background: radial-gradient(circle, #000 0%, #333 100%);
+      font-family: 'Arial', sans-serif;
     }
-
-    /* تنسيق النص */
+    /* تنسيق الرسالة */
     .message {
       position: absolute;
       top: 40%;
@@ -22,128 +20,165 @@
       transform: translate(-50%, -50%);
       text-align: center;
       color: #fff;
-      font-size: 2em;
-      user-select: none;
+      z-index: 2;
+      animation: glow 2s infinite alternate;
     }
-    .message .main {
-      font-size: 3em;
-      font-weight: bold;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.5em;
+    .message h1 {
+      font-size: 4em;
+      margin: 0;
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff0080, 0 0 30px #ff0080, 0 0 40px #ff0080;
+    }
+    .message p {
+      font-size: 1.5em;
+      margin-top: 0.5em;
+    }
+    @keyframes glow {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
+    }
+    /* تنسيق عنصر الـCanvas */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
     }
   </style>
 </head>
 <body>
-  <!-- نص التهنئة -->
+  <!-- رسالة عيد الميلاد -->
   <div class="message">
-    <div class="main">H A P P Y  B I R T H D A Y!</div>
-    <div>to you</div>
+    <h1>عيد ميلاد سعيد!</h1>
+    <p>كل عام وأنت بخير</p>
   </div>
 
-  <!-- عنصر الرسم الخاص بالقصاصات -->
-  <canvas id="confettiCanvas"></canvas>
+  <!-- عنصر الرسم للألعاب النارية -->
+  <canvas id="fireworksCanvas"></canvas>
 
-  <!-- كود الجافاسكربت في نفس الملف -->
   <script>
-    (function() {
-      const canvas = document.getElementById('confettiCanvas');
-      const ctx = canvas.getContext('2d');
+    // إعداد الـCanvas
+    const canvas = document.getElementById('fireworksCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
 
-      // تغيير حجم الـcanvas ليطابق حجم النافذة
-      let W = window.innerWidth;
-      let H = window.innerHeight;
-      canvas.width = W;
-      canvas.height = H;
+    window.addEventListener('resize', () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
 
-      // عند تغيير حجم الشاشة
-      window.addEventListener('resize', () => {
-        W = window.innerWidth;
-        H = window.innerHeight;
-        canvas.width = W;
-        canvas.height = H;
-      });
-
-      // عدد قصاصات الورق
-      const confettiCount = 250;
-
-      // مصفوفة لتخزين قصاصات الورق
-      let confettis = [];
-
-      // ألوان مختلفة للقصاصات
-      const colors = [
-        '#f94144',
-        '#f3722c',
-        '#f8961e',
-        '#f9844a',
-        '#f9c74f',
-        '#90be6d',
-        '#43aa8b',
-        '#4d908e',
-        '#577590',
-        '#277da1'
-      ];
-
-      // دالة لإنشاء قصاصة جديدة
-      function createConfettiPiece() {
-        return {
-          x: Math.random() * W,         // الموقع الأفقي
-          y: Math.random() * H - H,     // الموقع الرأسي (أعلى الشاشة)
-          r: Math.floor(Math.random() * 6) + 2, // نصف القطر
-          d: (Math.random() * confettiCount) + 10, // للتحكم بالسرعة
-          color: colors[Math.floor(Math.random() * colors.length)],
-          tilt: Math.random() * 10 - 10,
-          tiltAngleIncremental: (Math.random() * 0.07) + 0.05,
-          tiltAngle: 0
-        };
+    // تعريف فئة الجسيمات (Particles)
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = Math.random() * 3 + 1;
+        this.speed = Math.random() * 5 + 2;
+        this.angle = Math.random() * Math.PI * 2;
+        this.friction = 0.95;
+        this.gravity = 0.7;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.015 + 0.005;
       }
-
-      // تهيئة جميع القصاصات
-      function initConfettis() {
-        confettis = [];
-        for (let i = 0; i < confettiCount; i++) {
-          confettis.push(createConfettiPiece());
-        }
+      update() {
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= this.decay;
       }
-
-      // رسم كل قصاصة
-      function drawConfettiPiece(confetti) {
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
         ctx.beginPath();
-        ctx.lineWidth = confetti.r;
-        ctx.strokeStyle = confetti.color;
-        // نرسم خط أفقي بسيط مع الميل (tilt)
-        ctx.moveTo(confetti.x + confetti.tilt + (confetti.r / 2), confetti.y);
-        ctx.lineTo(confetti.x + confetti.tilt, confetti.y + confetti.tilt + confetti.r);
-        ctx.stroke();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
       }
+    }
 
-      // تحديث كل قصاصة
-      function update() {
-        ctx.clearRect(0, 0, W, H);
-
-        for (let i = 0; i < confettiCount; i++) {
-          let confetti = confettis[i];
-          confetti.tiltAngle += confetti.tiltAngleIncremental;
-          confetti.y += (Math.cos(confetti.d) + 3 + confetti.r / 2) / 2;
-          confetti.x += Math.sin(confetti.d);
-          confetti.tilt = Math.sin(confetti.tiltAngle - i / 3) * 15;
-
-          // إعادة القصاصة للأعلى إذا خرجت من أسفل الصفحة
-          if (confetti.y > H) {
-            confettis[i] = createConfettiPiece();
-            confettis[i].x = Math.random() * W;
-            confettis[i].y = -10;
+    // تعريف فئة الألعاب النارية (Firework)
+    class Firework {
+      constructor() {
+        this.x = Math.random() * cw;
+        this.y = ch;
+        this.targetY = Math.random() * ch / 2;
+        this.speed = Math.random() * 3 + 4;
+        this.exploded = false;
+        this.particles = [];
+        this.color = `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)`;
+      }
+      update() {
+        if (!this.exploded) {
+          // تحريك الألعاب النارية للأعلى حتى الوصول للهدف
+          this.y -= this.speed;
+          if (this.y <= this.targetY) {
+            this.explode();
           }
-          drawConfettiPiece(confetti);
+          // رسم نقطة صغيرة تمثل الألعاب النارية قبل الانفجار
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        } else {
+          // تحديث ورسم كل جسيم بعد الانفجار
+          for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.update();
+            p.draw();
+            if (p.alpha <= 0) {
+              this.particles.splice(i, 1);
+            }
+          }
         }
+      }
+      explode() {
+        this.exploded = true;
+        const particleCount = 30 + Math.floor(Math.random() * 20);
+        for (let i = 0; i < particleCount; i++) {
+          this.particles.push(new Particle(this.x, this.y, this.color));
+        }
+      }
+    }
 
-        // تحريك القصاصات باستمرار
-        requestAnimationFrame(update);
+    let fireworks = [];
+    // دالة الرسوم المتحركة الرئيسية
+    function animate() {
+      requestAnimationFrame(animate);
+      // خلفية شفافة لإحداث أثر التلاشي
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+      ctx.fillRect(0, 0, cw, ch);
+
+      // إطلاق ألعاب نارية جديدة بشكل عشوائي
+      if (Math.random() < 0.05) {
+        fireworks.push(new Firework());
       }
 
-      // بدء التأثير
-      initConfettis();
-      update();
-    })();
+      // تحديث ورسم كل الألعاب النارية
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        let fw = fireworks[i];
+        fw.update();
+        if (fw.exploded && fw.particles.length === 0) {
+          fireworks.splice(i, 1);
+        }
+      }
+    }
+
+    animate();
+
+    // إضافة حدث النقر لإطلاق الألعاب النارية في موقع النقر (اختياري)
+    window.addEventListener('click', (e) => {
+      const fw = new Firework();
+      fw.x = e.clientX;
+      fw.y = ch;
+      fw.targetY = e.clientY;
+      fireworks.push(fw);
+    });
   </script>
 </body>
 </html>
